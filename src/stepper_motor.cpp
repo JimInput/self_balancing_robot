@@ -2,7 +2,7 @@
 
 #include "../include/stepper_motor.h"
 
-StepperMotor::StepperMotor(int steps_per_rev, int step_pin, int dir_pin) {
+void StepperMotor::begin(int steps_per_rev, int step_pin, int dir_pin) {
     steps_per_rev_ = steps_per_rev;
     step_pin_ = step_pin;
     dir_pin_ = dir_pin;

@@ -16,7 +16,7 @@ unsigned long now, prev;
 unsigned long t_gyro_data = 0;
 float dt;
 
-StepperMotor master(StepperConstants::STEPS_PER_REVOLUTION, StepperConstants::STEP_PIN, StepperConstants::MASTER_DIR_PIN);
+StepperMotor master;
 
 void setup() {
     Serial.begin(ArduinoConstants::BAUD_RATE);
@@ -38,7 +38,7 @@ void setup() {
     calculate_IMU_error(2000);
     delay(2);
     // mpu.setup()
-
+    master.begin(StepperConstants::STEPS_PER_REVOLUTION, StepperConstants::STEP_PIN, StepperConstants::MASTER_DIR_PIN);
     master.set_speed(200.0f);
 
     prev = micros();

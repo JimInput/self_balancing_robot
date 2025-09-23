@@ -4,7 +4,8 @@
 
 class StepperMotor {
 public:
-    StepperMotor(int steps_per_rev, int step_pin, int dir_pin);
+    StepperMotor() = default;
+    void begin(int steps_per_rev, int step_pin, int dir_pin);
     void set_speed(float sps);
     void run(float dt);
 
