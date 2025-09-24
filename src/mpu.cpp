@@ -13,7 +13,7 @@ void MPU6050::begin(const int address) {
     roll_ = 0; pitch_ = 0; yaw_ = 0;
     acc_err_x_ = 0; acc_err_y_ = 0; 
     gyro_err_x_ = 0; gyro_err_y_ = 0; gyro_err_z_ = 0;
-    num_print_calls_ = 0;
+    time_since_last_gyro_print_ = 0;
 }
 
 void MPU6050::mpuWrite(uint8_t reg, uint8_t val) {
@@ -74,10 +74,13 @@ void MPU6050::update_angles(float dt) {
     pitch_ = MPUConstants::ALPHA * gyro_angle_y_ + (1-MPUConstants::ALPHA) * acc_angle_y_;
 }
 
-void MPU6050::print_angles() {
-    Serial.print(roll_); Serial.print("/");
-    Serial.print(pitch_); Serial.print("/");
-    Serial.println(yaw_);
+void MPU6050::print_angles(unsigned long now) {
+    if (now - time_since_last_gyro_print_ >= ArduinoConstants::DATA_PRINT_US) {
+        time_since_last_gyro_print_ = now;
+        Serial.print(roll_); Serial.print("/");
+        Serial.print(pitch_); Serial.print("/");
+        Serial.println(yaw_);
+    }
 }
 
 void MPU6050::calculate_IMU_error(const int N) {

@@ -13,15 +13,22 @@ void StepperMotor::begin(int steps_per_rev, int step_pin, int dir_pin) {
 
     pinMode(step_pin_, OUTPUT);
     pinMode(dir_pin_, OUTPUT);
+
     digitalWrite(step_pin_, LOW);
+    digitalWrite(dir_pin_, LOW);
 }
 
 void StepperMotor::set_speed(float sps) {
     speed_sps_ = sps;
+    if (sps > 0) {
+        digitalWrite(dir_pin_, HIGH);
+    } else {
+        digitalWrite(dir_pin_, LOW);
+    }
 }
 
 void StepperMotor::run(float dt) {
-    if (speed_sps_ <= 0.0f || dt <= 0) return;
+    if (speed_sps_ == 0.0f || dt <= 0) return;
 
     float steps_due = speed_sps_ * dt + frac_steps_;
     int steps_now = static_cast<int>(steps_due);

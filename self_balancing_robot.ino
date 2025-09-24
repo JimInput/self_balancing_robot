@@ -1,6 +1,8 @@
 // arduino-cli compile --fqbn arduino:avr:uno ./
 // arduino-cli upload -p /dev/ttyUSB0 --fqbn arduino:avr:uno ./
+// arduino-cli monitor -p /dev/ttyUSB0 --config baudrate=9600 ./
 // usbipd attach --wsl "Ubuntu" --auto-attach --busid 2-3
+
 #include <Arduino.h>
 #include <Wire.h>
 
@@ -8,60 +10,53 @@
 #include "include/stepper_motor.h"
 #include "include/mpu.h"
 
-unsigned long now, prev, last_gyro_print;
+unsigned long now, prev;
 float dt;
 
 StepperMotor master;
+StepperMotor slave;
 MPU6050 gyro;
 
 void setup() {
-    pinMode(0, INPUT_PULLUP);  // release RX
-    pinMode(1, INPUT_PULLUP);  // release TX   
     Serial.begin(ArduinoConstants::BAUD_RATE);
     Wire.begin();
     delay(1500);
+    
     Serial.println(F("BOOT OK @ 9600"));
 
     Wire.setClock(WireConstants::CLOCK_RATE);
     Wire.setWireTimeout(3000, true);
     
-    master.begin(StepperConstants::STEPS_PER_REVOLUTION, StepperConstants::STEP_PIN, StepperConstants::MASTER_DIR_PIN);
+    master.begin(StepperConstants::STEPS_PER_REVOLUTION, StepperConstants::MASTER_STEP_PIN, StepperConstants::MASTER_DIR_PIN);
+    slave.begin(StepperConstants::STEPS_PER_REVOLUTION, StepperConstants::SLAVE_STEP_PIN, StepperConstants::SLAVE_DIR_PIN);
+    
     gyro.begin(MPUConstants::MPU_ADDRESS);
 
     gyro.setup();
     gyro.calculate_IMU_error(200);
+    
     master.set_speed(200.0f);
-    //
+    slave.set_speed(100.0f);
+
     prev = micros();
 }
 
-void update_time() {
+void update_times() {
     now = micros();
     dt = (now - prev) * 1e-6f;
     prev = now;
-    if (dt <= 0.0f || dt > 0.05f) dt = 0.01f;
+    if (dt <= 0.0f || dt > 0.05f) dt = 0.01f; // limit to at most 100ms delay between loop calls
 }
 
 void loop() {
-    gyro.update_measurements();
+    gyro.update_measurements(); // this is first to account for delays in reading from I2C bus.
     
-    // --- compute dt --- //
-    update_time();
-    // --- compute dt --- //
+    update_times();
     
-    // --- GYRO --- //
     gyro.update_angles(dt);
-    if (now - last_gyro_print >= 50000) {
-        gyro.print_angles();
-        last_gyro_print = now;
-    }
-    // --- GYRO --- //
+    gyro.print_angles(now);
     
-    // --- MOTORS --- //
-    digitalWrite(StepperConstants::MASTER_DIR_PIN, HIGH);
-    digitalWrite(StepperConstants::SLAVE_DIR_PIN, LOW);
-    //
     master.run(dt);
-    // --- MOTORS --- //
+    slave.run(dt);
 }
 

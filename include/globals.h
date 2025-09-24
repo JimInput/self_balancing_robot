@@ -2,13 +2,15 @@
 
 namespace StepperConstants {
     inline constexpr int MASTER_DIR_PIN = 2;
-    inline constexpr int STEP_PIN = 3;
+    inline constexpr int MASTER_STEP_PIN = 3;
     inline constexpr int STEPS_PER_REVOLUTION = 200;
     inline constexpr int SLAVE_DIR_PIN = 4;
+    inline constexpr int SLAVE_STEP_PIN = 5;
 }
 
 namespace ArduinoConstants {
     inline constexpr int BAUD_RATE = 9600;
+    inline constexpr int DATA_PRINT_US = 50000;
 }
 
 namespace WireConstants {
@@ -25,6 +27,5 @@ namespace MPUConstants {
     inline constexpr float ACCEL_2G_CONSTANT = 16384.0; // limits accel to +- 2g
     inline constexpr float GYRO_SENSITIVITY_SCALE_FACTOR = 131.0; // allow gyro to register angular input of 250 deg/sec
     inline constexpr float ALPHA = 0.96;
-    inline constexpr int GYRO_OUTPUT_EVERY_US = 20000;
     inline constexpr int NUM_ERROR_TRIALS = 200;
 }
