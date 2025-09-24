@@ -13,7 +13,24 @@ void MPU6050::begin(const int address) {
     roll_ = 0; pitch_ = 0; yaw_ = 0;
     acc_err_x_ = 0; acc_err_y_ = 0; 
     gyro_err_x_ = 0; gyro_err_y_ = 0; gyro_err_z_ = 0;
-    time_since_last_gyro_reading_ = 0;
+    num_print_calls_ = 0;
+}
+
+void MPU6050::mpuWrite(uint8_t reg, uint8_t val) {
+    Wire.beginTransmission(address_);
+    Wire.write(reg);
+    Wire.write(val);
+    Wire.endTransmission(true);
+}
+
+void MPU6050::mpu_configure_filters() {
+    mpuWrite(0x1B, 0x00);
+    mpuWrite(0x1C, 0x00);
+
+    const uint8_t DLPF_CFG = 3; // 3 = 44Hz, 4 = 20Hz, 5 = 10Hz, 6 = 5Hz
+    mpuWrite(0x1A, DLPF_CFG);
+
+    mpuWrite(0x19, 19);
 }
 
 void MPU6050::setup() {
@@ -22,20 +39,15 @@ void MPU6050::setup() {
     Wire.write(0x00);
     Wire.endTransmission(true);
 
-    Wire.beginTransmission(address_);
-    Wire.write(MPUConstants::CONFIG_BANDWIDTH_ADDRESS);
-    Wire.write(MPUConstants::BANDWIDTH_42_HZ);
-    Wire.endTransmission(true);
+    mpu_configure_filters();
 
-    this->calculate_IMU_error(MPUConstants::NUM_ERROR_TRIALS);
-    delay(2);
 }
 
 void MPU6050::update_measurements() {
-    Wire.beginTransmission(MPUConstants::MPU_ADDRESS);
+    Wire.beginTransmission(address_);
     Wire.write(MPUConstants::ACCEL_X_AXIS_REGISTER_ADDRESS);
     Wire.endTransmission(false);
-    Wire.requestFrom(MPUConstants::MPU_ADDRESS, 6, true);
+    Wire.requestFrom(address_, 6, true);
     acc_x_ = (Wire.read() << 8 | Wire.read()) / MPUConstants::ACCEL_2G_CONSTANT;
     acc_y_ = (Wire.read() << 8 | Wire.read()) / MPUConstants::ACCEL_2G_CONSTANT;
     acc_z_ = (Wire.read() << 8 | Wire.read()) / MPUConstants::ACCEL_2G_CONSTANT;
@@ -43,11 +55,11 @@ void MPU6050::update_measurements() {
     acc_angle_x_ = (atan2(acc_y_, sqrt(acc_x_*acc_x_ + acc_z_*acc_z_)) * 180 / PI) - acc_err_x_;
     acc_angle_y_ = (atan2(-1*acc_x_, sqrt(acc_y_*acc_y_ + acc_z_*acc_z_))* 180/ PI) - acc_err_y_;
 
-    Wire.beginTransmission(MPUConstants::MPU_ADDRESS);
+    Wire.beginTransmission(address_);
     Wire.write(MPUConstants::GYRO_X_AXIS_REGISTER_ADDRESS);
     Wire.endTransmission(false);
 
-    Wire.requestFrom(MPUConstants::MPU_ADDRESS, 6, true);
+    Wire.requestFrom(address_, 6, true);
     gyro_x_ = (Wire.read() << 8 | Wire.read()) / MPUConstants::GYRO_SENSITIVITY_SCALE_FACTOR - gyro_err_x_;
     gyro_y_ = (Wire.read() << 8 | Wire.read()) / MPUConstants::GYRO_SENSITIVITY_SCALE_FACTOR - gyro_err_y_;
     gyro_z_ = (Wire.read() << 8 | Wire.read()) / MPUConstants::GYRO_SENSITIVITY_SCALE_FACTOR - gyro_err_z_;
@@ -62,23 +74,18 @@ void MPU6050::update_angles(float dt) {
     pitch_ = MPUConstants::ALPHA * gyro_angle_y_ + (1-MPUConstants::ALPHA) * acc_angle_y_;
 }
 
-void MPU6050::print_angles(unsigned long now) {
-    if (now - time_since_last_gyro_reading_ >= MPUConstants::GYRO_OUTPUT_EVERY_US) {
-        time_since_last_gyro_reading_ += MPUConstants::GYRO_OUTPUT_EVERY_US; // 20ms
-        Serial.print(roll_);
-        Serial.print("/");
-        Serial.print(pitch_);
-        Serial.print("/");
-        Serial.println(yaw_);
-    }
+void MPU6050::print_angles() {
+    Serial.print(roll_); Serial.print("/");
+    Serial.print(pitch_); Serial.print("/");
+    Serial.println(yaw_);
 }
 
 void MPU6050::calculate_IMU_error(const int N) {
     for (int i = 0; i < N; i++) {
-        Wire.beginTransmission(MPUConstants::MPU_ADDRESS);
+        Wire.beginTransmission(address_);
         Wire.write(MPUConstants::ACCEL_X_AXIS_REGISTER_ADDRESS);
         Wire.endTransmission(false);
-        Wire.requestFrom(MPUConstants::MPU_ADDRESS, 6, true);
+        Wire.requestFrom(address_, 6, true);
 
         acc_x_ = (Wire.read() << 8 | Wire.read()) / MPUConstants::ACCEL_2G_CONSTANT;
         acc_y_ = (Wire.read() << 8 | Wire.read()) / MPUConstants::ACCEL_2G_CONSTANT;
@@ -93,10 +100,10 @@ void MPU6050::calculate_IMU_error(const int N) {
     acc_err_y_ /= static_cast<float>(N);
 
     for (int i = 0; i < N; i++) {
-        Wire.beginTransmission(MPUConstants::MPU_ADDRESS);
+        Wire.beginTransmission(address_);
         Wire.write(MPUConstants::GYRO_X_AXIS_REGISTER_ADDRESS);
         Wire.endTransmission(false);
-        Wire.requestFrom(MPUConstants::MPU_ADDRESS, 6, true);
+        Wire.requestFrom(address_, 6, true);
 
         gyro_x_ = Wire.read() << 8 | Wire.read();
         gyro_y_ = Wire.read() << 8 | Wire.read();

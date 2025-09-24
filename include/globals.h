@@ -8,7 +8,7 @@ namespace StepperConstants {
 }
 
 namespace ArduinoConstants {
-    inline constexpr int BAUD_RATE = 115200;
+    inline constexpr int BAUD_RATE = 9600;
 }
 
 namespace WireConstants {
@@ -26,5 +26,5 @@ namespace MPUConstants {
     inline constexpr float GYRO_SENSITIVITY_SCALE_FACTOR = 131.0; // allow gyro to register angular input of 250 deg/sec
     inline constexpr float ALPHA = 0.96;
     inline constexpr int GYRO_OUTPUT_EVERY_US = 20000;
-    inline constexpr int NUM_ERROR_TRIALS = 2000;
+    inline constexpr int NUM_ERROR_TRIALS = 200;
 }

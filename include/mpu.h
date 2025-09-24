@@ -8,7 +8,10 @@ public:
     void calculate_IMU_error(const int N);
     void update_measurements();
     void update_angles(float dt);
-    void print_angles(unsigned long now);
+    void print_angles();
+    void mpuWrite(uint8_t reg, uint8_t val);
+    uint8_t mpuRead(uint8_t reg);
+    void mpu_configure_filters();
 
     float get_roll();
     float get_pitch();
@@ -27,5 +30,5 @@ private:
     float acc_angle_x_, acc_angle_y_, gyro_angle_x_, gyro_angle_y_, gyro_angle_z_;
     float roll_, pitch_, yaw_;
     float acc_err_x_, acc_err_y_, gyro_err_x_, gyro_err_y_, gyro_err_z_;
-    unsigned long time_since_last_gyro_reading_; 
+    int num_print_calls_; 
 };
