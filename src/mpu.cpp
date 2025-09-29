@@ -30,7 +30,7 @@ void MPU6050::mpu_configure_filters() {
     const uint8_t DLPF_CFG = 3; // 3 = 44Hz, 4 = 20Hz, 5 = 10Hz, 6 = 5Hz
     mpuWrite(0x1A, DLPF_CFG);
 
-    mpuWrite(0x19, 19);
+    mpuWrite(0x19, 9);
 }
 
 void MPU6050::setup() {
@@ -65,13 +65,19 @@ void MPU6050::update_measurements() {
     gyro_z_ = (Wire.read() << 8 | Wire.read()) / MPUConstants::GYRO_SENSITIVITY_SCALE_FACTOR - gyro_err_z_;
 }
 
+float complementary_alpha(float dt, float fc_hz) {
+    float tau = 1.0f / (2.0f * PI * fc_hz);
+    return tau / (tau + dt);
+}
+
 void MPU6050::update_angles(float dt) {
     gyro_angle_x_ += gyro_x_ * dt;
     gyro_angle_y_ += gyro_y_ * dt;
     yaw_ += gyro_z_ * dt;
 
-    roll_ = MPUConstants::ALPHA * gyro_angle_x_ + (1-MPUConstants::ALPHA) * acc_angle_x_;
-    pitch_ = MPUConstants::ALPHA * gyro_angle_y_ + (1-MPUConstants::ALPHA) * acc_angle_y_;
+    float alpha = complementary_alpha(dt, 30.0f); // 30 Hz
+    roll_ = alpha * gyro_angle_x_ + (1-alpha) * acc_angle_x_;
+    pitch_ = alpha * gyro_angle_y_ + (1-alpha) * acc_angle_y_;
 }
 
 void MPU6050::print_angles(unsigned long now) {
@@ -81,6 +87,28 @@ void MPU6050::print_angles(unsigned long now) {
         Serial.print(pitch_); Serial.print("/");
         Serial.println(yaw_);
     }
+}
+
+void MPU6050::print_roll(unsigned long now) {
+    if (now - time_since_last_gyro_print_ >= ArduinoConstants::DATA_PRINT_US) {
+        time_since_last_gyro_print_ = now;
+        Serial.println(roll_);
+    }
+}
+
+void MPU6050::print_pitch(unsigned long now) {
+    if (now - time_since_last_gyro_print_ >= ArduinoConstants::DATA_PRINT_US) {
+        time_since_last_gyro_print_ = now;
+        Serial.println(pitch_);
+    }
+}
+
+float MPU6050::get_pitch() {
+    return pitch_;
+}
+
+float MPU6050::get_pitch_rate() {
+    return gyro_y_;
 }
 
 void MPU6050::calculate_IMU_error(const int N) {

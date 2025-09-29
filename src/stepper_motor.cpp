@@ -14,17 +14,32 @@ void StepperMotor::begin(int steps_per_rev, int step_pin, int dir_pin) {
     pinMode(step_pin_, OUTPUT);
     pinMode(dir_pin_, OUTPUT);
 
-    digitalWrite(step_pin_, LOW);
-    digitalWrite(dir_pin_, LOW);
+    step_bitmask_ = digitalPinToBitMask(step_pin_);
+    step_port_ = portOutputRegister(digitalPinToPort(step_pin_));
+
+    dir_bitmask_ = digitalPinToBitMask(dir_pin_);
+    dir_port_ = portOutputRegister(digitalPinToPort(dir_pin_));
+
+    *step_port_ &= ~step_bitmask_;
+    *dir_port_ &= ~dir_bitmask_;
+
 }
 
 void StepperMotor::set_speed(float sps) {
-    speed_sps_ = sps;
-    if (sps > 0) {
-        digitalWrite(dir_pin_, HIGH);
-    } else {
-        digitalWrite(dir_pin_, LOW);
+    static bool last_dir_positive = true;
+    bool curr_dir_positive = sps >= 0;
+
+    if (curr_dir_positive != last_dir_positive) {
+        last_dir_positive = curr_dir_positive;
+
+        if (curr_dir_positive) {
+            *dir_port_ |= dir_bitmask_;
+        } else {
+            *dir_port_ &= ~dir_bitmask_;
+        }
+        delayMicroseconds(10);
     }
+    speed_sps_ = fabs(sps);
 }
 
 void StepperMotor::run(float dt) {
@@ -34,17 +49,17 @@ void StepperMotor::run(float dt) {
     int steps_now = static_cast<int>(steps_due);
     frac_steps_ = steps_due - static_cast<float>(steps_now);
 
-    const int MAX_PULSES_PER_CALL = 8;
-    int emit = steps_due;
+    const int MAX_PULSES_PER_CALL = 32;
+    int emit = steps_now;
     if (emit > MAX_PULSES_PER_CALL) {
-        frac_steps_ += static_cast<float>(emit - MAX_PULSES_PER_CALL);
+        // frac_steps_ += static_cast<float>(emit - MAX_PULSES_PER_CALL);
         emit = MAX_PULSES_PER_CALL;
     }
 
     for (int i = 0; i < emit; ++i) {
-        digitalWrite(step_pin_, HIGH);
+        *step_port_ |= step_bitmask_;
         delayMicroseconds(step_pulse_high_us_);
-        digitalWrite(step_pin_, LOW);
+        *step_port_ &= ~step_bitmask_;
         delayMicroseconds(step_pulse_high_us_);
     }
 }

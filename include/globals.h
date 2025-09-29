@@ -3,14 +3,14 @@
 namespace StepperConstants {
     inline constexpr int MASTER_DIR_PIN = 2;
     inline constexpr int MASTER_STEP_PIN = 3;
-    inline constexpr int STEPS_PER_REVOLUTION = 200;
+    inline constexpr int STEPS_PER_REVOLUTION = 800;
     inline constexpr int SLAVE_DIR_PIN = 4;
-    inline constexpr int SLAVE_STEP_PIN = 5;
+    inline constexpr int SLAVE_STEP_PIN = 7;
 }
 
 namespace ArduinoConstants {
     inline constexpr int BAUD_RATE = 9600;
-    inline constexpr int DATA_PRINT_US = 50000;
+    inline constexpr unsigned long DATA_PRINT_US = 50000;
 }
 
 namespace WireConstants {

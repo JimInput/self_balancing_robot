@@ -12,10 +12,13 @@ public:
     void mpuWrite(uint8_t reg, uint8_t val);
     uint8_t mpuRead(uint8_t reg);
     void mpu_configure_filters();
+    void print_roll(unsigned long now);
+    void print_pitch(unsigned long now);
 
     float get_roll();
     float get_pitch();
     float get_yaw();
+    float get_pitch_rate();
 
     float get_acc_err_x();
     float get_acc_err_y();
