@@ -30,6 +30,13 @@ private:
     int address_;
     float acc_x_, acc_y_, acc_z_;
     float gyro_x_, gyro_y_, gyro_z_;
+    float gyro_x_raw_, gyro_y_raw_, gyro_z_raw_;
+    float gyro_x_filt_, gyro_y_filt_, gyro_z_filt_;
+    float gx_hist_[3], gy_hist_[3], gz_hist_[30];
+    float gyro_bx_, gyro_by_, gyro_bz_;
+    float gyro_lpf_fc_hz_; // low-pass cutoff (Hz)
+    float bias_alpha_; // how fast bias adapts when still (small = slow)
+    float still_thresh_dps_; // consider still if |rate| < this (deg/sec)
     float acc_angle_x_, acc_angle_y_, gyro_angle_x_, gyro_angle_y_, gyro_angle_z_;
     float roll_, pitch_, yaw_;
     float acc_err_x_, acc_err_y_, gyro_err_x_, gyro_err_y_, gyro_err_z_;
